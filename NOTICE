@@ -1,0 +1,14 @@
+OrganicLifeCoin Server Stack
+Copyright (c) 2026 OrganicLifeCoin contributors
+
+This repository contains deployment and operations files for OrganicLifeCoin services.
+
+The deployed components retain their own licenses and notices:
+
+- OrganLife-Core derives from PIVX Core and Bitcoin Core.
+- organic-web-wallet derives from PIVX Web Wallet.
+- organic-rpc-bridge derives from PivxNodeController.
+- organic-blockbook derives from Trezor Blockbook and PIVX-compatible work.
+- Caddy is distributed under the Apache License 2.0.
+
+Read each source repository before you redistribute a component image.

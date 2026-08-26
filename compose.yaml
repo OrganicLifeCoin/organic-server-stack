@@ -1,0 +1,228 @@
+name: organic-server-stack
+
+services:
+  node:
+    image: organiclifecoin/node:${NODE_RELEASE}
+    build:
+      context: ./node
+      args:
+        NODE_RELEASE: ${NODE_RELEASE}
+        NODE_AMD64_SHA256: ${NODE_AMD64_SHA256}
+        NODE_ARM64_SHA256: ${NODE_ARM64_SHA256}
+    environment:
+      NETWORK: ${NETWORK}
+      NODE_RPC_PORT: ${NODE_RPC_PORT}
+      NODE_P2P_PORT: ${NODE_P2P_PORT}
+      NODE_RPC_THREADS: ${NODE_RPC_THREADS}
+      NODE_RPC_WORK_QUEUE: ${NODE_RPC_WORK_QUEUE}
+    secrets:
+      - node_rpc_user
+      - node_rpc_password
+    volumes:
+      - node-data:/data
+      - sapling-params:/opt/organiclifecoin/params
+    tmpfs:
+      - /runtime:size=1m,mode=0700,uid=10001,gid=10001
+      - /tmp:size=16m,mode=1777
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    expose:
+      - "38349"
+      - "49716"
+      - "49718"
+    networks:
+      - backend
+    restart: unless-stopped
+    stop_grace_period: 2m
+
+  rpc-bridge:
+    image: organiclifecoin/rpc-bridge:${RPC_BRIDGE_REF}
+    build:
+      context: https://github.com/OrganicLifeCoin/organic-rpc-bridge.git#${RPC_BRIDGE_REF}
+    entrypoint:
+      - /bin/sh
+      - /stack/start-rpc-bridge.sh
+    environment:
+      NETWORK: ${NETWORK}
+      PORT: "8080"
+      RPC_HOST: node
+      MAINNET_RPC_PORT: "43723"
+      TESTNET_RPC_PORT: ${NODE_RPC_PORT}
+      ALLOWED_RPCS: getblockcount,getblockhash,getblock,getbestblockhash,listmasternodes,getmasternodecount,getmasternodestatus,getbudgetprojection,getbudgetinfo,getnextsuperblock,getbudgetvotes,getgovvotestatus,listgovlocks,relaymasternodebroadcast,mnbudgetrawvote,submitbudget,sendrawtransaction
+      RPC_TIMEOUT_MS: ${RPC_TIMEOUT_MS}
+      RPC_RESPONSE_LIMIT_BYTES: ${RPC_RESPONSE_LIMIT_BYTES}
+      REQUESTS_PER_MINUTE: ${REQUESTS_PER_MINUTE}
+      SENSITIVE_REQUESTS_PER_MINUTE: ${SENSITIVE_REQUESTS_PER_MINUTE}
+      MAX_RATE_LIMIT_CLIENTS: ${MAX_RATE_LIMIT_CLIENTS}
+      SHIELD_DATA_DIR: /data
+      TRUST_PROXY: "1"
+    secrets:
+      - node_rpc_user
+      - node_rpc_password
+    volumes:
+      - ./deploy/start-rpc-bridge.sh:/stack/start-rpc-bridge.sh:ro
+      - shield-data:/data
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      node:
+        condition: service_healthy
+    expose:
+      - "8080"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  blockbook:
+    image: organiclifecoin/blockbook:${BLOCKBOOK_REF}
+    build:
+      context: https://github.com/OrganicLifeCoin/organic-blockbook.git#${BLOCKBOOK_REF}
+      args:
+        VERSION: 0.1.0
+        VCS_REF: ${BLOCKBOOK_REF}
+        BUILD_TIME: release
+    entrypoint:
+      - /bin/sh
+      - /stack/start-blockbook.sh
+    command:
+      - /app/blockbook
+      - -sync
+      - -datadir=/data
+      - -resyncindexperiod=60017
+      - -resyncmempoolperiod=60017
+      - -blockchaincfg=/runtime/blockchainconfig.json
+      - -internal=:19049
+      - -public=:9130
+      - -logtostderr
+    environment:
+      NETWORK: ${NETWORK}
+      NODE_RPC_HOST: node
+      NODE_RPC_PORT: ${NODE_RPC_PORT}
+      NODE_ZMQ_HOST: node
+      NODE_ZMQ_PORT: "38349"
+      RPC_TIMEOUT: ${BLOCKBOOK_RPC_TIMEOUT}
+      MEMPOOL_WORKERS: ${MEMPOOL_WORKERS}
+      MEMPOOL_SUB_WORKERS: ${MEMPOOL_SUB_WORKERS}
+      BLOCK_ADDRESSES_TO_KEEP: ${BLOCK_ADDRESSES_TO_KEEP}
+    secrets:
+      - node_rpc_user
+      - node_rpc_password
+    volumes:
+      - ./deploy/start-blockbook.sh:/stack/start-blockbook.sh:ro
+      - blockbook-data:/data
+    tmpfs:
+      - /runtime:size=1m,mode=0700,uid=10001,gid=10001
+      - /tmp:size=16m,mode=1777
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      node:
+        condition: service_healthy
+    expose:
+      - "9130"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  wallet:
+    image: organiclifecoin/web-wallet:${WALLET_REF}
+    build:
+      context: https://github.com/OrganicLifeCoin/organic-web-wallet.git#${WALLET_REF}
+      args:
+        CHAIN_PARAMS_FILE: chain_params.backend.json
+    tmpfs:
+      - /var/cache/nginx:size=16m,mode=0755
+      - /var/run:size=1m,mode=0755
+      - /tmp:size=16m,mode=1777
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
+    expose:
+      - "80"
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  gateway:
+    image: caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    environment:
+      CADDY_SITE: ${CADDY_SITE}
+    ports:
+      - "${PUBLIC_HTTP_PORT}:80"
+      - "${PUBLIC_HTTPS_PORT}:443"
+    volumes:
+      - ./gateway/Caddyfile:/etc/caddy/Caddyfile:ro
+      - sapling-params:/srv/olc-params:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    depends_on:
+      wallet:
+        condition: service_healthy
+      rpc-bridge:
+        condition: service_healthy
+      blockbook:
+        condition: service_healthy
+    networks:
+      - edge
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8081/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+secrets:
+  node_rpc_user:
+    file: ./.secrets/rpc_user
+  node_rpc_password:
+    file: ./.secrets/rpc_password
+
+networks:
+  edge:
+  backend:
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
+
+volumes:
+  node-data:
+  blockbook-data:
+  shield-data:
+  sapling-params:
+  caddy-data:
+  caddy-config:

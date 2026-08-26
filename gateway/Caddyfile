@@ -1,0 +1,57 @@
+{
+	admin off
+	servers {
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		trusted_proxies_strict
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+:8081 {
+	@health path /healthz
+	respond @health "healthy" 200
+}
+
+{$CADDY_SITE::80} {
+	encode zstd gzip
+
+	request_body {
+		max_size 6MB
+	}
+
+	header {
+		-Server
+		Cross-Origin-Embedder-Policy "require-corp"
+		Cross-Origin-Opener-Policy "same-origin"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+	}
+
+	@health path /healthz
+	handle @health {
+		respond "healthy" 200
+	}
+
+	@rpc path /mainnet* /testnet*
+	handle @rpc {
+		reverse_proxy rpc-bridge:8080
+	}
+
+	@sapling path /sapling-output.params /sapling-spend.params
+	handle @sapling {
+		root * /srv/olc-params
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	@blockbook path /api* /websocket /blocks* /block/* /tx/* /address/* /xpub/* /mempool* /status* /sendtx* /static/*
+	handle @blockbook {
+		reverse_proxy blockbook:9130
+	}
+
+	handle {
+		reverse_proxy wallet:80
+	}
+}
