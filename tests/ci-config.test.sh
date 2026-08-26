@@ -18,6 +18,7 @@ required_patterns=(
     'docker compose.*build'
     'Build the RPC bridge image'
     'Build the wallet image'
+    'wallet-build.log'
     'Build the Blockbook image'
     'docker compose.*up.*--wait-timeout 300'
     'curl.*healthz'

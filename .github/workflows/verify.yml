@@ -75,7 +75,11 @@ jobs:
         run: docker compose --env-file .env build --pull rpc-bridge
 
       - name: Build the wallet image
-        run: docker compose --env-file .env build --pull wallet
+        run: |
+          if ! docker compose --env-file .env build --pull --progress plain wallet 2>&1 | tee wallet-build.log; then
+            tail -80 wallet-build.log | sed 's/^/::error title=Wallet image build::/'
+            exit 1
+          fi
 
       - name: Build the Blockbook image
         run: docker compose --env-file .env build --pull blockbook
