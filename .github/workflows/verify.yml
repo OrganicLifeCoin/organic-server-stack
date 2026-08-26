@@ -68,10 +68,17 @@ jobs:
           docker inspect --format '{{.Config.User}}' "organiclifecoin/node:${NODE_RELEASE}" | grep -Fx organiclife
           docker run --rm --entrypoint organiclifed "organiclifecoin/node:${NODE_RELEASE}" --version
 
-      - name: Build the application images
-        run: |
-          docker compose --env-file .env pull gateway
-          docker compose --env-file .env build --pull rpc-bridge wallet blockbook
+      - name: Pull the gateway image
+        run: docker compose --env-file .env pull gateway
+
+      - name: Build the RPC bridge image
+        run: docker compose --env-file .env build --pull rpc-bridge
+
+      - name: Build the wallet image
+        run: docker compose --env-file .env build --pull wallet
+
+      - name: Build the Blockbook image
+        run: docker compose --env-file .env build --pull blockbook
 
       - name: Start and check the complete stack
         run: |
