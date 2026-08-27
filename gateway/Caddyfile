@@ -34,6 +34,15 @@
 		respond "healthy" 200
 	}
 
+	@walletNoSlash path /wallet
+	handle @walletNoSlash {
+		redir /wallet/ 308
+	}
+
+	handle_path /wallet/* {
+		reverse_proxy wallet:80
+	}
+
 	@rpc path /mainnet* /testnet*
 	handle @rpc {
 		reverse_proxy rpc-bridge:8080
