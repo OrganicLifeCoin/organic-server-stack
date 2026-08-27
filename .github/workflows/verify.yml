@@ -86,7 +86,12 @@ jobs:
 
       - name: Start and check the complete stack
         run: |
-          docker compose --env-file .env up -d --wait --wait-timeout 300
+          if ! docker compose --env-file .env up -d --wait --wait-timeout 300 2>&1 | tee stack-start.log; then
+            docker compose --env-file .env ps --all 2>&1 | tee -a stack-start.log
+            docker compose --env-file .env logs --no-color --tail=120 2>&1 | tee -a stack-start.log
+            tail -200 stack-start.log | sed 's/^/::error title=Stack startup::/'
+            exit 1
+          fi
           curl --fail --silent --show-error http://127.0.0.1/healthz
           curl --fail --silent --show-error http://127.0.0.1/api/v2 >/dev/null
 
