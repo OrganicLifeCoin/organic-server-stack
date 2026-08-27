@@ -26,7 +26,7 @@ require_file Makefile
 
 require_line .env.example 'NETWORK=testnet'
 require_line .env.example 'NODE_RELEASE=v1.1.2.0-testnet'
-require_line .env.example 'WALLET_REF=94ee002ec00b50f35c57e377d672930f6c86ad1d'
+require_line .env.example 'WALLET_REF=774c9ac61ef4ac3c902dd034e366dcd6a5148fc3'
 require_line .env.example 'RPC_BRIDGE_REF=96074907643ae25efd043cc02ed28fd407c27882'
 require_line .env.example 'BLOCKBOOK_REF=bfeb91020e9f900e316aaade639d3f021280e055'
 

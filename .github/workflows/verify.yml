@@ -78,6 +78,7 @@ jobs:
 
       - name: Build the wallet image
         run: |
+          set -o pipefail
           if ! docker compose --env-file .env build --pull --progress plain wallet 2>&1 | tee wallet-build.log; then
             tail -80 wallet-build.log | sed 's/^/::error title=Wallet image build::/'
             exit 1
@@ -88,6 +89,7 @@ jobs:
 
       - name: Start and check the complete stack
         run: |
+          set -o pipefail
           if ! docker compose --env-file .env up -d --wait --wait-timeout 300 2>&1 | tee stack-start.log; then
             docker compose --env-file .env ps --all 2>&1 | tee -a stack-start.log
             docker compose --env-file .env logs --no-color --tail=120 2>&1 | tee -a stack-start.log

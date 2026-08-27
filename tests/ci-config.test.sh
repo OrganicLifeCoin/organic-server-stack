@@ -19,6 +19,7 @@ required_patterns=(
     'Build the RPC bridge image'
     'Build the wallet image'
     'wallet-build.log'
+    'set -o pipefail'
     'Build the Blockbook image'
     'docker compose.*up.*--wait-timeout 300'
     'PUBLIC_HTTP_PORT=18080'
