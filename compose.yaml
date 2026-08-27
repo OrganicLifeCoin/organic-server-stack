@@ -1,6 +1,25 @@
 name: organic-server-stack
 
 services:
+  credential-init:
+    image: alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+    entrypoint:
+      - /bin/sh
+      - /stack/init-credentials.sh
+    secrets:
+      - node_rpc_user
+      - node_rpc_password
+    volumes:
+      - ./deploy/init-credentials.sh:/stack/init-credentials.sh:ro
+      - rpc-credentials:/credentials
+    read_only: true
+    network_mode: none
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: "no"
+
   node:
     image: organiclifecoin/node:${NODE_RELEASE}
     build:
@@ -15,12 +34,12 @@ services:
       NODE_P2P_PORT: ${NODE_P2P_PORT}
       NODE_RPC_THREADS: ${NODE_RPC_THREADS}
       NODE_RPC_WORK_QUEUE: ${NODE_RPC_WORK_QUEUE}
-    secrets:
-      - node_rpc_user
-      - node_rpc_password
+      NODE_RPC_USER_FILE: /run/credentials/rpc_user
+      NODE_RPC_PASSWORD_FILE: /run/credentials/rpc_password
     volumes:
       - node-data:/data
       - sapling-params:/opt/organiclifecoin/params
+      - rpc-credentials:/run/credentials:ro
     tmpfs:
       - /runtime:size=1m,mode=0700,uid=10001,gid=10001
       - /tmp:size=16m,mode=1777
@@ -35,6 +54,9 @@ services:
       - "49718"
     networks:
       - backend
+    depends_on:
+      credential-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     stop_grace_period: 2m
 
@@ -59,12 +81,12 @@ services:
       MAX_RATE_LIMIT_CLIENTS: ${MAX_RATE_LIMIT_CLIENTS}
       SHIELD_DATA_DIR: /data
       TRUST_PROXY: "1"
-    secrets:
-      - node_rpc_user
-      - node_rpc_password
+      NODE_RPC_USER_FILE: /run/credentials/rpc_user
+      NODE_RPC_PASSWORD_FILE: /run/credentials/rpc_password
     volumes:
       - ./deploy/start-rpc-bridge.sh:/stack/start-rpc-bridge.sh:ro
       - shield-data:/data
+      - rpc-credentials:/run/credentials:ro
     tmpfs:
       - /tmp:size=16m,mode=1777
     read_only: true
@@ -73,6 +95,8 @@ services:
     cap_drop:
       - ALL
     depends_on:
+      credential-init:
+        condition: service_completed_successfully
       node:
         condition: service_healthy
     expose:
@@ -112,12 +136,12 @@ services:
       MEMPOOL_WORKERS: ${MEMPOOL_WORKERS}
       MEMPOOL_SUB_WORKERS: ${MEMPOOL_SUB_WORKERS}
       BLOCK_ADDRESSES_TO_KEEP: ${BLOCK_ADDRESSES_TO_KEEP}
-    secrets:
-      - node_rpc_user
-      - node_rpc_password
+      NODE_RPC_USER_FILE: /run/credentials/rpc_user
+      NODE_RPC_PASSWORD_FILE: /run/credentials/rpc_password
     volumes:
       - ./deploy/start-blockbook.sh:/stack/start-blockbook.sh:ro
       - blockbook-data:/data
+      - rpc-credentials:/run/credentials:ro
     tmpfs:
       - /runtime:size=1m,mode=0700,uid=10001,gid=10001
       - /tmp:size=16m,mode=1777
@@ -127,6 +151,8 @@ services:
     cap_drop:
       - ALL
     depends_on:
+      credential-init:
+        condition: service_completed_successfully
       node:
         condition: service_healthy
     expose:
@@ -220,6 +246,7 @@ networks:
         - subnet: 172.29.0.0/24
 
 volumes:
+  rpc-credentials:
   node-data:
   blockbook-data:
   shield-data:

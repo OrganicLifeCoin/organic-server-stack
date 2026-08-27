@@ -14,7 +14,7 @@ compose_json=$(docker compose \
     --env-file "$repo_root/.env.example" \
     -f "$compose_file" config --format json)
 
-for service in node rpc-bridge blockbook wallet gateway; do
+for service in credential-init node rpc-bridge blockbook wallet gateway; do
     if ! jq -e --arg service "$service" '.services[$service]' <<<"$compose_json" >/dev/null; then
         printf 'Missing service: %s\n' "$service" >&2
         exit 1
@@ -44,18 +44,38 @@ if ! jq -e '.services.gateway.healthcheck.test | join(" ") | contains("127.0.0.1
     exit 1
 fi
 
-for service in node rpc-bridge blockbook; do
-    for secret in node_rpc_user node_rpc_password; do
-        if ! jq -e --arg service "$service" --arg secret "$secret" \
-            '.services[$service].secrets[] | select(.source == $secret)' \
-            <<<"$compose_json" >/dev/null; then
-            printf '%s does not receive %s.\n' "$service" "$secret" >&2
-            exit 1
-        fi
-    done
+for secret in node_rpc_user node_rpc_password; do
+    if ! jq -e --arg secret "$secret" \
+        '.services["credential-init"].secrets[] | select(.source == $secret)' \
+        <<<"$compose_json" >/dev/null; then
+        printf 'credential-init does not receive %s.\n' "$secret" >&2
+        exit 1
+    fi
 done
 
-for service in node rpc-bridge blockbook wallet; do
+for service in node rpc-bridge blockbook; do
+    if jq -e --arg service "$service" '.services[$service].secrets // empty' \
+        <<<"$compose_json" >/dev/null; then
+        printf '%s must consume the private credential volume, not host secret mounts.\n' "$service" >&2
+        exit 1
+    fi
+
+    if ! jq -e --arg service "$service" \
+        '.services[$service].volumes[] | select(.source == "rpc-credentials" and .target == "/run/credentials" and .read_only == true)' \
+        <<<"$compose_json" >/dev/null; then
+        printf '%s does not receive the read-only credential volume.\n' "$service" >&2
+        exit 1
+    fi
+
+    if ! jq -e --arg service "$service" \
+        '.services[$service].depends_on["credential-init"].condition == "service_completed_successfully"' \
+        <<<"$compose_json" >/dev/null; then
+        printf '%s does not wait for credential initialization.\n' "$service" >&2
+        exit 1
+    fi
+done
+
+for service in credential-init node rpc-bridge blockbook wallet; do
     if ! jq -e --arg service "$service" \
         '.services[$service].security_opt | index("no-new-privileges:true")' \
         <<<"$compose_json" >/dev/null; then
@@ -79,6 +99,11 @@ fi
 
 if ! rg -q 'caddy:2\.11\.4-alpine@sha256:' "$compose_file"; then
     printf 'The gateway image is not pinned by digest.\n' >&2
+    exit 1
+fi
+
+if ! rg -q 'alpine:3\.22\.1@sha256:' "$compose_file"; then
+    printf 'The credential initializer image is not pinned by digest.\n' >&2
     exit 1
 fi
 

@@ -18,7 +18,7 @@ Caddy is the only service with host ports. The node RPC port, RPC bridge, Blockb
 
 The browser wallet creates and signs transactions locally. The server submits signed data, but it does not receive wallet private keys.
 
-Docker secret files provide the node RPC credentials. The repository does not contain credentials, certificates, wallet files, or private keys.
+Docker secret files provide the node RPC credentials. A network-isolated initializer copies them into a private read-only volume for the non-root services. The repository does not contain credentials, certificates, wallet files, or private keys.
 
 The default configuration runs testnet. The node image uses the official `v1.1.2.0-testnet` release and verifies its published SHA-256 digest.
 

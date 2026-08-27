@@ -44,6 +44,8 @@ Read the service health state:
 docker compose ps
 ```
 
+The `credential-init` container must finish with exit code `0`. It has no network access. The node, RPC bridge, and Blockbook read its private credential volume without running as root.
+
 Read node synchronization data:
 
 ```bash
