@@ -26,6 +26,9 @@ required_patterns=(
     'curl.*--retry-connrefused'
     'stack-start.log'
     'docker compose.*ps --all'
+    'PUBLIC_HTTP_PORT=18080'
+    'PUBLIC_HTTPS_PORT=18443'
+    '127\.0\.0\.1:18080/healthz'
     'docker inspect.*organiclife'
     'docker compose.*down'
 )
