@@ -84,6 +84,12 @@ for service in credential-init node rpc-bridge blockbook wallet; do
     fi
 done
 
+if ! jq -e '.services["credential-init"].cap_add | index("DAC_READ_SEARCH")' \
+    <<<"$compose_json" >/dev/null; then
+    printf 'The credential initializer lacks its required read-only secret capability.\n' >&2
+    exit 1
+fi
+
 for capability in CHOWN SETGID SETUID NET_BIND_SERVICE; do
     if ! jq -e --arg capability "$capability" \
         '.services.wallet.cap_add | index($capability)' <<<"$compose_json" >/dev/null; then
