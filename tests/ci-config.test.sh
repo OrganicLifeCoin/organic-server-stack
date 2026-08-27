@@ -23,6 +23,7 @@ required_patterns=(
     'docker compose.*up.*--wait-timeout 300'
     'curl.*healthz'
     'curl.*api/v2'
+    'curl.*--retry-connrefused'
     'stack-start.log'
     'docker compose.*ps --all'
     'docker inspect.*organiclife'
