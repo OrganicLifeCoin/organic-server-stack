@@ -52,6 +52,7 @@ txindex=1
 daemon=0
 printtoconsole=1
 listen=1
+[test]
 port=$p2p_port
 rpcport=$rpc_port
 rpcbind=0.0.0.0

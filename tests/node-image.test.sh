@@ -35,8 +35,18 @@ require_pattern 'NETWORK.*testnet' "$entrypoint"
 require_pattern '/run/secrets/node_rpc_user' "$entrypoint"
 require_pattern '/run/secrets/node_rpc_password' "$entrypoint"
 require_pattern 'chmod 0600' "$entrypoint"
+require_pattern '^\[test\]$' "$entrypoint"
 require_pattern 'rpcallowip=172\.29\.0\.0/24' "$entrypoint"
 require_pattern 'exec organiclifed' "$entrypoint"
+
+test_section_line=$(rg -n '^\[test\]$' "$entrypoint" | cut -d: -f1)
+for setting in 'port=' 'rpcport=' 'rpcbind='; do
+    setting_line=$(rg -n "^${setting}" "$entrypoint" | cut -d: -f1)
+    if [[ -z "$setting_line" || "$setting_line" -le "$test_section_line" ]]; then
+        printf '%s must be defined in the testnet section.\n' "$setting" >&2
+        exit 1
+    fi
+done
 
 if rg -q 'curl[^\n]+\|[[:space:]]*(sh|bash)' "$dockerfile"; then
     printf 'The node image executes an unverified remote script.\n' >&2
