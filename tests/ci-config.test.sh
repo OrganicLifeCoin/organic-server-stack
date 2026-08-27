@@ -21,6 +21,8 @@ required_patterns=(
     'wallet-build.log'
     'Build the Blockbook image'
     'docker compose.*up.*--wait-timeout 300'
+    'PUBLIC_HTTP_PORT=18080'
+    'PUBLIC_HTTPS_PORT=18443'
     'docker compose.*exec.*gateway.*healthz'
     'docker compose.*exec.*gateway.*api/v2'
     'stack-start.log'
