@@ -30,8 +30,6 @@ jobs:
       - name: Create CI configuration
         run: |
           cp .env.example .env
-          sed -i 's/^PUBLIC_HTTP_PORT=.*/PUBLIC_HTTP_PORT=18080/' .env
-          sed -i 's/^PUBLIC_HTTPS_PORT=.*/PUBLIC_HTTPS_PORT=18443/' .env
           mkdir -p .secrets
           printf '%s\n' 'olc_ci' >.secrets/rpc_user
           printf '%s\n' '0123456789abcdef0123456789abcdef' >.secrets/rpc_password
@@ -94,8 +92,8 @@ jobs:
             tail -200 stack-start.log | sed 's/^/::error title=Stack startup::/'
             exit 1
           fi
-          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 2 --max-time 10 http://127.0.0.1:18080/healthz
-          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 2 --max-time 10 http://127.0.0.1:18080/api/v2 >/dev/null
+          docker compose --env-file .env exec -T gateway wget --quiet --output-document=- http://127.0.0.1/healthz
+          docker compose --env-file .env exec -T gateway wget --quiet --output-document=/dev/null http://127.0.0.1/api/v2
 
       - name: Clean the CI stack
         if: always()
