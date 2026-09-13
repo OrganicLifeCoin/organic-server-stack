@@ -28,7 +28,7 @@ require_line .env.example 'NETWORK=testnet'
 require_line .env.example 'NODE_RELEASE=v1.1.13-testnet'
 require_line .env.example 'WALLET_REF=8a310ef3304c67f70e6fe7255447140c36c2d0ad'
 require_line .env.example 'RPC_BRIDGE_REF=545612e1b9ffb1e536cfc004900a91f814b3caed'
-require_line .env.example 'BLOCKBOOK_REF=e9f10ddede55278a714b045594ab29b2da40940d'
+require_line .env.example 'BLOCKBOOK_REF=1af4295e2f10c66cf0e51b0ef21f70a7203b98a1'
 
 require_line .gitignore '.env'
 require_line .gitignore '.secrets/*'
