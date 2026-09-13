@@ -33,6 +33,23 @@ for service in rpc-bridge blockbook wallet; do
     fi
 done
 
+allowed_rpcs=$(jq -r '.services["rpc-bridge"].environment.ALLOWED_RPCS' <<<"$compose_json")
+if [[ "$allowed_rpcs" != "getblockcount,getmempoolinfo,listpqmasternodes" ]]; then
+    printf 'The RPC bridge must expose only the PQ wallet read surface.\n' >&2
+    exit 1
+fi
+
+if jq -e '.services["rpc-bridge"].environment.SHIELD_DATA_DIR // empty' \
+    <<<"$compose_json" >/dev/null; then
+    printf 'The read-only RPC bridge must not retain shield data.\n' >&2
+    exit 1
+fi
+
+if jq -e '.volumes["shield-data"] // empty' <<<"$compose_json" >/dev/null; then
+    printf 'The server stack must not create the obsolete shield-data volume.\n' >&2
+    exit 1
+fi
+
 if [[ $(jq '.services.gateway.ports | length' <<<"$compose_json") -ne 2 ]]; then
     printf 'The gateway must publish HTTP and HTTPS only.\n' >&2
     exit 1

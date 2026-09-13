@@ -49,6 +49,7 @@ cat >"$temporary_config" <<EOF
 testnet=1
 server=1
 txindex=1
+disablewallet=1
 daemon=0
 printtoconsole=1
 listen=1

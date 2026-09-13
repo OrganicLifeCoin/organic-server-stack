@@ -40,7 +40,6 @@ services:
       NODE_RPC_PASSWORD_FILE: /run/credentials/rpc_password
     volumes:
       - node-data:/data
-      - sapling-params:/opt/organiclifecoin/params
       - rpc-credentials:/run/credentials:ro
     tmpfs:
       - /runtime:size=1m,mode=0700,uid=10001,gid=10001
@@ -75,19 +74,16 @@ services:
       RPC_HOST: node
       MAINNET_RPC_PORT: "43723"
       TESTNET_RPC_PORT: ${NODE_RPC_PORT}
-      ALLOWED_RPCS: getblockcount,getblockhash,getblock,getbestblockhash,listmasternodes,getmasternodecount,getmasternodestatus,getbudgetprojection,getbudgetinfo,getnextsuperblock,getbudgetvotes,getgovvotestatus,listgovlocks,relaymasternodebroadcast,mnbudgetrawvote,submitbudget,sendrawtransaction
+      ALLOWED_RPCS: getblockcount,getmempoolinfo,listpqmasternodes
       RPC_TIMEOUT_MS: ${RPC_TIMEOUT_MS}
       RPC_RESPONSE_LIMIT_BYTES: ${RPC_RESPONSE_LIMIT_BYTES}
       REQUESTS_PER_MINUTE: ${REQUESTS_PER_MINUTE}
-      SENSITIVE_REQUESTS_PER_MINUTE: ${SENSITIVE_REQUESTS_PER_MINUTE}
       MAX_RATE_LIMIT_CLIENTS: ${MAX_RATE_LIMIT_CLIENTS}
-      SHIELD_DATA_DIR: /data
       TRUST_PROXY: "1"
       NODE_RPC_USER_FILE: /run/credentials/rpc_user
       NODE_RPC_PASSWORD_FILE: /run/credentials/rpc_password
     volumes:
       - ./deploy/start-rpc-bridge.sh:/stack/start-rpc-bridge.sh:ro
-      - shield-data:/data
       - rpc-credentials:/run/credentials:ro
     tmpfs:
       - /tmp:size=16m,mode=1777
@@ -204,7 +200,6 @@ services:
       - "${PUBLIC_HTTPS_PORT}:443"
     volumes:
       - ./gateway/Caddyfile:/etc/caddy/Caddyfile:ro
-      - sapling-params:/srv/olc-params:ro
       - caddy-data:/data
       - caddy-config:/config
     tmpfs:
@@ -251,7 +246,5 @@ volumes:
   rpc-credentials:
   node-data:
   blockbook-data:
-  shield-data:
-  sapling-params:
   caddy-data:
   caddy-config:

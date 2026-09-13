@@ -25,7 +25,7 @@ trap restart_stack EXIT
 docker compose stop
 stack_stopped=true
 
-volume_names=(node-data blockbook-data shield-data caddy-data caddy-config)
+volume_names=(node-data blockbook-data caddy-data caddy-config)
 for volume_name in "${volume_names[@]}"; do
     docker run --rm \
         --volume "organic-server-stack_${volume_name}:/source:ro" \

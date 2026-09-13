@@ -25,12 +25,10 @@ require_pattern 'trusted_proxies_strict'
 require_pattern 'client_ip_headers CF-Connecting-IP X-Forwarded-For'
 require_pattern '173\.245\.48\.0/20'
 require_pattern '2c0f:f248::/32'
-require_pattern 'path /mainnet\* /testnet\*'
+require_pattern 'path /testnet\*'
 require_pattern 'reverse_proxy rpc-bridge:8080'
 require_pattern 'path /api\* /websocket'
 require_pattern 'reverse_proxy blockbook:9130'
-require_pattern 'path /sapling-output\.params /sapling-spend\.params'
-require_pattern 'root \* /srv/olc-params'
 require_pattern 'path /wallet$'
 require_pattern 'handle_path /wallet/\*'
 require_pattern 'reverse_proxy wallet:80'
@@ -38,11 +36,22 @@ require_pattern 'Cross-Origin-Embedder-Policy.*require-corp'
 require_pattern 'Cross-Origin-Opener-Policy.*same-origin'
 require_pattern 'X-Content-Type-Options.*nosniff'
 require_pattern 'X-Frame-Options.*DENY'
+require_pattern 'Strict-Transport-Security.*max-age=31536000'
+require_pattern "Content-Security-Policy.*default-src 'self'"
+require_pattern "frame-ancestors 'none'"
+require_pattern "object-src 'none'"
+require_pattern "script-src 'self'"
+require_pattern "form-action 'none'"
 require_pattern 'max_size 6MB'
 require_pattern 'respond.*200'
 
 if rg -q 'tls[[:space:]]+internal' "$caddyfile"; then
     printf 'The public gateway must not issue a private CA certificate.\n' >&2
+    exit 1
+fi
+
+if rg -q 'path /mainnet|sapling-(output|spend)\.params|unsafe-inline.*wasm-unsafe-eval' "$caddyfile"; then
+    printf 'The testnet gateway exposes an obsolete or unsafe route.\n' >&2
     exit 1
 fi
 

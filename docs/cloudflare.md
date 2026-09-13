@@ -22,17 +22,24 @@ Before each release, compare the configured networks with the official [IPv4](ht
 
 Use SSL/TLS mode `Full (strict)`. Do not use `Flexible` mode.
 
+The gateway sends a one-year HSTS policy. Browsers ignore it on direct HTTP,
+but enforce it after the first successful HTTPS response. Do not enable public
+mainnet traffic until the Cloudflare and origin certificates are valid.
+
 Permit WebSocket connections. The Blockbook live API uses `/websocket`.
+
+The gateway also sends a wallet-specific Content Security Policy. Re-run the
+browser checks after adding any new remote API, font, image, worker, or script
+source; add only the exact source that the feature needs.
 
 Do not cache these paths:
 
-- `/mainnet*`
 - `/testnet*`
 - `/api*`
 - `/websocket`
 - `/sendtx*`
 
-The two Sapling parameter files can use a long public cache. Keep the wallet HTML cache short so that releases replace it promptly.
+Keep the wallet HTML cache short so that releases replace it promptly.
 
 Apply rate limits to RPC submission, signed-transaction submission, and expensive address queries. Do not expose the node RPC port through Cloudflare.
 

@@ -20,7 +20,7 @@ fi
     sha256sum --check SHA256SUMS
 )
 
-volume_names=(node-data blockbook-data shield-data caddy-data caddy-config)
+volume_names=(node-data blockbook-data caddy-data caddy-config)
 for volume_name in "${volume_names[@]}"; do
     if [[ ! -f "$backup_dir/${volume_name}.tar.gz" ]]; then
         printf 'Missing backup archive: %s.tar.gz\n' "$volume_name" >&2

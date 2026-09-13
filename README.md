@@ -14,13 +14,13 @@ Application source stays in separate repositories. This repository contains only
 
 ## Security model
 
-Caddy is the only service with host ports. The node RPC port, RPC bridge, Blockbook, and wallet stay on a Docker network.
+Caddy is the only service with host ports. The node RPC port, RPC bridge, Blockbook, and wallet stay on a Docker network. The server node starts with its built-in wallet disabled.
 
 The browser wallet creates and signs transactions locally. The server submits signed data, but it does not receive wallet private keys.
 
 Docker secret files provide the node RPC credentials. A network-isolated initializer copies them into a private read-only volume for the non-root services. The repository does not contain credentials, certificates, wallet files, or private keys.
 
-The default configuration runs testnet. The node image uses the official `v1.1.2.0-testnet` release and verifies its published SHA-256 digest.
+The default configuration runs testnet. The node image uses the official `v1.1.13-testnet` release and verifies the GitHub-published SHA-256 digest for each architecture.
 
 ## Source repositories
 
@@ -77,11 +77,11 @@ Open `http://SERVER_ADDRESS/` for the wallet. Open `http://SERVER_ADDRESS/blocks
 | Route | Service |
 | --- | --- |
 | `/` | OLC web wallet |
-| `/mainnet*` and `/testnet*` | Restricted RPC bridge |
+| `/testnet*` | Read-only RPC bridge |
 | `/api*` and `/websocket` | Blockbook API |
 | `/blocks`, `/block/*`, `/tx/*`, `/address/*` | OLC explorer |
-| `/sapling-output.params` | Sapling output parameters |
-| `/sapling-spend.params` | Sapling spend parameters |
+
+The bridge exposes only `getblockcount`, `getmempoolinfo`, and `listpqmasternodes`. Signed PQ transfers and masternode registrations are submitted through Blockbook. The public stack has no Core wallet, signing, unlock, operator-creation, or collateral-withdrawal endpoint.
 
 ## Operations
 

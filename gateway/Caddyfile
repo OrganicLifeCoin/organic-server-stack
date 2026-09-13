@@ -21,8 +21,10 @@
 
 	header {
 		-Server
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'"
 		Cross-Origin-Embedder-Policy "require-corp"
 		Cross-Origin-Opener-Policy "same-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "same-origin"
@@ -43,16 +45,9 @@
 		reverse_proxy wallet:80
 	}
 
-	@rpc path /mainnet* /testnet*
+	@rpc path /testnet*
 	handle @rpc {
 		reverse_proxy rpc-bridge:8080
-	}
-
-	@sapling path /sapling-output.params /sapling-spend.params
-	handle @sapling {
-		root * /srv/olc-params
-		header Cache-Control "public, max-age=86400"
-		file_server
 	}
 
 	@blockbook path /api* /websocket /blocks* /block/* /tx/* /address/* /xpub/* /mempool* /status* /sendtx* /static/*
