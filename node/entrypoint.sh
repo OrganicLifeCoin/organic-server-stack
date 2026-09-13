@@ -11,14 +11,21 @@ fi
 
 rpc_user_file=${NODE_RPC_USER_FILE:-/run/secrets/node_rpc_user}
 rpc_password_file=${NODE_RPC_PASSWORD_FILE:-/run/secrets/node_rpc_password}
+pq_bootstrap_file=${NODE_PQ_BOOTSTRAP_FILE:-/run/config/pq-bootstrap}
 
 if [ ! -r "$rpc_user_file" ] || [ ! -r "$rpc_password_file" ]; then
     printf 'The node RPC secret files are not readable.\n' >&2
     exit 1
 fi
 
+if [ ! -r "$pq_bootstrap_file" ]; then
+    printf 'The testnet PQ bootstrap file is not readable.\n' >&2
+    exit 1
+fi
+
 rpc_user=$(cat "$rpc_user_file")
 rpc_password=$(cat "$rpc_password_file")
+pq_bootstrap=$(cat "$pq_bootstrap_file")
 
 case "$rpc_user" in
     ''|*[!A-Za-z0-9._-]*)
@@ -37,6 +44,20 @@ if [ "$rpc_password" != "$single_line_password" ]; then
     printf 'The node RPC password contains a line break.\n' >&2
     exit 1
 fi
+
+
+single_line_bootstrap=$(printf '%s' "$pq_bootstrap" | tr -d '\r\n')
+if [ "$pq_bootstrap" != "$single_line_bootstrap" ] ||
+   [ "${#pq_bootstrap}" -lt 200 ] || [ "${#pq_bootstrap}" -gt 20000 ]; then
+    printf 'The testnet PQ bootstrap is malformed.\n' >&2
+    exit 1
+fi
+case "$pq_bootstrap" in
+    *[!0-9A-Fa-f:]*|:*|*::*)
+        printf 'The testnet PQ bootstrap is malformed.\n' >&2
+        exit 1
+        ;;
+esac
 
 rpc_port=${NODE_RPC_PORT:-49718}
 p2p_port=${NODE_P2P_PORT:-49716}
@@ -60,6 +81,7 @@ rpcbind=0.0.0.0
 rpcallowip=172.29.0.0/24
 rpcuser=$rpc_user
 rpcpassword=$rpc_password
+pqbootstrap=$pq_bootstrap
 rpcthreads=$rpc_threads
 rpcworkqueue=$rpc_work_queue
 zmqpubhashblock=tcp://0.0.0.0:38349
@@ -69,7 +91,7 @@ EOF
 chmod 0600 "$temporary_config"
 mv "$temporary_config" "$config_path"
 
-unset rpc_user rpc_password single_line_password
+unset rpc_user rpc_password single_line_password pq_bootstrap single_line_bootstrap
 
 exec organiclifed \
     -conf="$config_path" \

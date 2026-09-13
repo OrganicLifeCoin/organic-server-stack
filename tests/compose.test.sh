@@ -21,6 +21,18 @@ for service in credential-init node rpc-bridge blockbook wallet gateway; do
     fi
 done
 
+if ! jq -e '.services.node.configs[] | select(.source == "node-pq-bootstrap" and .target == "/run/config/pq-bootstrap")' \
+    <<<"$compose_json" >/dev/null; then
+    printf 'The node does not receive the pinned testnet PQ bootstrap.\n' >&2
+    exit 1
+fi
+
+if ! jq -e '.configs["node-pq-bootstrap"].file | endswith("/node/testnet-pq-bootstrap")' \
+    <<<"$compose_json" >/dev/null; then
+    printf 'The testnet PQ bootstrap source is not pinned in the repository.\n' >&2
+    exit 1
+fi
+
 if jq -e '.services.node.ports // empty' <<<"$compose_json" >/dev/null; then
     printf 'The node must not publish a host port.\n' >&2
     exit 1

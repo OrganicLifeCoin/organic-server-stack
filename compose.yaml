@@ -38,6 +38,10 @@ services:
       NODE_RPC_WORK_QUEUE: ${NODE_RPC_WORK_QUEUE}
       NODE_RPC_USER_FILE: /run/credentials/rpc_user
       NODE_RPC_PASSWORD_FILE: /run/credentials/rpc_password
+      NODE_PQ_BOOTSTRAP_FILE: /run/config/pq-bootstrap
+    configs:
+      - source: node-pq-bootstrap
+        target: /run/config/pq-bootstrap
     volumes:
       - node-data:/data
       - rpc-credentials:/run/credentials:ro
@@ -234,6 +238,10 @@ secrets:
     file: ./.secrets/rpc_user
   node_rpc_password:
     file: ./.secrets/rpc_password
+
+configs:
+  node-pq-bootstrap:
+    file: ./node/testnet-pq-bootstrap
 
 networks:
   edge:
