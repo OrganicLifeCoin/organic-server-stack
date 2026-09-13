@@ -45,6 +45,11 @@
 		reverse_proxy wallet:80
 	}
 
+	@supply path /supply /api/supply /api/v1/supply /api/v2/supply /api/v2/totalsupply /api/v2/total-supply /api/v2/circulating-supply
+	handle @supply {
+		reverse_proxy rpc-bridge:8080
+	}
+
 	@rpc path /testnet*
 	handle @rpc {
 		reverse_proxy rpc-bridge:8080
