@@ -51,7 +51,9 @@
 	}
 
 	@mainnetDisabled path /mainnet*
-	respond @mainnetDisabled 404
+	handle @mainnetDisabled {
+		respond 404
+	}
 
 	@blockbook path /api* /websocket /blocks* /block/* /tx/* /address/* /xpub/* /mempool* /status* /sendtx* /static/*
 	handle @blockbook {
