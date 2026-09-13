@@ -27,6 +27,8 @@ require_pattern '173\.245\.48\.0/20'
 require_pattern '2c0f:f248::/32'
 require_pattern 'path /testnet\*'
 require_pattern 'reverse_proxy rpc-bridge:8080'
+require_pattern '@mainnetDisabled path /mainnet\*'
+require_pattern 'respond @mainnetDisabled 404'
 require_pattern 'path /api\* /websocket'
 require_pattern 'reverse_proxy blockbook:9130'
 require_pattern 'path /wallet$'
@@ -50,7 +52,7 @@ if rg -q 'tls[[:space:]]+internal' "$caddyfile"; then
     exit 1
 fi
 
-if rg -q 'path /mainnet|sapling-(output|spend)\.params|unsafe-inline.*wasm-unsafe-eval' "$caddyfile"; then
+if rg -q 'sapling-(output|spend)\.params|unsafe-inline.*wasm-unsafe-eval' "$caddyfile"; then
     printf 'The testnet gateway exposes an obsolete or unsafe route.\n' >&2
     exit 1
 fi

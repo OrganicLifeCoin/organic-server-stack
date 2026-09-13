@@ -50,6 +50,9 @@
 		reverse_proxy rpc-bridge:8080
 	}
 
+	@mainnetDisabled path /mainnet*
+	respond @mainnetDisabled 404
+
 	@blockbook path /api* /websocket /blocks* /block/* /tx/* /address/* /xpub/* /mempool* /status* /sendtx* /static/*
 	handle @blockbook {
 		reverse_proxy blockbook:9130
